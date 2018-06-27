@@ -7,9 +7,9 @@
 
 using namespace std;
 
-CmdParser::CmdParser(const int argc, wchar_t* argv[]) {
+CmdParser::CmdParser(const int argc, char* argv[]) {
 	for (int i = 1; i < argc; ++i) {
-		std::wstring param(argv[i]);
+		std::wstring param(Convert::charToWChar(argv[i]));
 		if (param.length() < 1) {
 			continue;
 		}

@@ -16,7 +16,7 @@ void printHelp();
 
 const std::wstring ENCRYPTED_FILENAME_ENDING(L".enc");
 
-int wmain(int argc, wchar_t* argv[])
+int main(int argc, char* argv[])
 {
 	try {
 		CmdParser parser(argc, argv);

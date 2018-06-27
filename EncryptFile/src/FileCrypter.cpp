@@ -2,40 +2,39 @@
 #include "FileCrypter.h"
 #include "SodiumClass.h"
 #include "Util.h"
-#include "Convert.h"
 #include <fstream>
 #include <algorithm>
 
 const int64_t FileCrypter::CHUNK_SIZE = 1 * 1024 * 1024;
 
-void FileCrypter::openFiles(const std::wstring& source, std::ifstream& input, const std::wstring& dest, std::ofstream& output) {
-	input.open(Convert::wcharToChar(source.c_str()), std::ifstream::in | std::ifstream::binary);
+void FileCrypter::openFiles(const std::string& source, std::ifstream& input, const std::string& dest, std::ofstream& output) {
+	input.open(source, std::ifstream::in | std::ifstream::binary);
 	if (!input.is_open()) {
 		Util::BuffType msg;
-		msg << L"Cant open input-file " << source;
+		msg << "Cant open input-file " << source;
 		throw Util::generateErrorMessage<std::runtime_error>(msg);
 	}
 
-	output.open(Convert::wcharToChar(dest.c_str()), std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
+	output.open(dest, std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
 	if (!output.is_open()) {
 		Util::BuffType msg;
-		msg << L"Cant open output-file " << dest;
+		msg << "Cant open output-file " << dest;
 		throw Util::generateErrorMessage<std::runtime_error>(msg);
 	}
 }
 
 void FileCrypter::doWork(const int64_t readSize, Sodium& sodium, std::ifstream& input, std::ofstream& output) {
 	const int64_t startPos = input.tellg();
-	checkStream(input, L"tell start from input file");
+	checkStream(input, "tell start from input file");
 
 	input.seekg(0, std::ifstream::end);
-	checkStream(input, L"seek input file to end");
+	checkStream(input, "seek input file to end");
 
 	const int64_t fileSize = input.tellg();
-	checkStream(input, L"tell end from input file");
+	checkStream(input, "tell end from input file");
 
 	input.seekg(startPos, std::ifstream::beg);
-	checkStream(input, L"seek input file to start");
+	checkStream(input, "seek input file to start");
 
 	int64_t remaining;
 	std::vector<unsigned char> encrypted;
@@ -44,19 +43,19 @@ void FileCrypter::doWork(const int64_t readSize, Sodium& sodium, std::ifstream& 
 		chunk.resize(toReadSize);
 
 		input.read(reinterpret_cast<char*>(chunk.data()), chunk.size());
-		checkStream(input, L"read from file");
+		checkStream(input, "read from file");
 
 		encrypted = sodium.doWork(chunk, remaining == toReadSize);
 
 		output.write(reinterpret_cast<const char*>(encrypted.data()), encrypted.size());
-		checkStream(output, L"write to file");
+		checkStream(output, "write to file");
 	}
 
 	output.flush();
-	checkStream(output, L"flush output file");
+	checkStream(output, "flush output file");
 }
 
-void FileCrypter::doEncrypt(const std::wstring & password, const std::wstring & sourceFile, const std::wstring & destFile) {
+void FileCrypter::doEncrypt(const std::string & password, const std::string & sourceFile, const std::string & destFile) {
 	std::ifstream input;
 	std::ofstream output;
 	openFiles(sourceFile, input, destFile, output);
@@ -64,10 +63,10 @@ void FileCrypter::doEncrypt(const std::wstring & password, const std::wstring & 
 	Sodium sodium(password);
 
 	output.write(reinterpret_cast<const char*>(sodium.getSalt().data()), Sodium::PW_SALT_LENGTH);
-	checkStream(output, L"write salt to file");
+	checkStream(output, "write salt to file");
 
 	output.write(reinterpret_cast<const char*>(sodium.getHeader().data()), Sodium::HEADER_LENGTH);
-	checkStream(output, L"write header to file");
+	checkStream(output, "write header to file");
 
 	doWork(CHUNK_SIZE, sodium, input, output);
 
@@ -75,7 +74,7 @@ void FileCrypter::doEncrypt(const std::wstring & password, const std::wstring & 
 	output.close();
 }
 
-void FileCrypter::doDecrypt(const std::wstring & password, const std::wstring & sourceFile, const std::wstring & destFile) {
+void FileCrypter::doDecrypt(const std::string & password, const std::string & sourceFile, const std::string & destFile) {
 	std::ifstream input;
 	std::ofstream output;
 	openFiles(sourceFile, input, destFile, output);
@@ -86,10 +85,10 @@ void FileCrypter::doDecrypt(const std::wstring & password, const std::wstring & 
 	header.resize(Sodium::HEADER_LENGTH, 0);
 
 	input.read(reinterpret_cast<char*>(salt.data()), salt.size());
-	checkStream(input, L"read salt from file");
+	checkStream(input, "read salt from file");
 
 	input.read(reinterpret_cast<char*>(header.data()), header.size());
-	checkStream(input, L"read header from file");
+	checkStream(input, "read header from file");
 
 	Sodium sodium(password, salt, header);
 

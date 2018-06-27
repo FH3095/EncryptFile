@@ -19,7 +19,7 @@ private:
 	std::vector<unsigned char> salt;
 	std::vector<unsigned char> header;
 	crypto_secretstream_xchacha20poly1305_state state;
-	void init(const std::wstring& password, const std::vector<unsigned char>& salt);
+	void init(const std::string& password, const std::vector<unsigned char>& salt);
 	std::vector<unsigned char> encrypt(const std::vector<unsigned char>& src, bool isLast);
 	std::vector<unsigned char> decrypt(const std::vector<unsigned char>& src, bool isLast);
 public:
@@ -27,8 +27,8 @@ public:
 	static const unsigned int HEADER_LENGTH;
 	static const unsigned int ENCRYPTED_CHUNK_ADDITIONAL_SIZE;
 
-	Sodium(const std::wstring& password);
-	Sodium(const std::wstring& password, const std::vector<unsigned char>& salt, const std::vector<unsigned char>& header);
+	Sodium(const std::string& password);
+	Sodium(const std::string& password, const std::vector<unsigned char>& salt, const std::vector<unsigned char>& header);
 	~Sodium() noexcept(false);
 
 	const std::vector<unsigned char>& getSalt() {

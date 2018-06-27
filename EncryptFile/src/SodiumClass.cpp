@@ -1,6 +1,5 @@
 
 #include "SodiumClass.h"
-#include "Convert.h"
 #include "Util.h"
 #include <stdexcept>
 
@@ -12,13 +11,13 @@ const unsigned int Sodium::PW_MEMLIMIT = crypto_pwhash_MEMLIMIT_MODERATE;
 const unsigned int Sodium::PW_ALG = crypto_pwhash_ALG_ARGON2ID13;
 const unsigned int Sodium::PW_SALT_LENGTH = crypto_pwhash_SALTBYTES;
 
-void Sodium::init(const std::wstring& password, const std::vector<unsigned char>& newSalt) {
+void Sodium::init(const std::string& password, const std::vector<unsigned char>& newSalt) {
 	if (sodium_init() < 0) {
 		throw std::runtime_error("Cant init libsodium");
 	}
 	if (newSalt.size() != PW_SALT_LENGTH) {
-		std::wostringstream msg;
-		msg << L"Invalid salt size: " << newSalt.size() << L" expected " << PW_SALT_LENGTH;
+		Util::BuffType msg;
+		msg << "Invalid salt size: " << newSalt.size() << " expected " << PW_SALT_LENGTH;
 		throw Util::generateErrorMessage<std::runtime_error>(msg);
 	}
 	this->salt = newSalt;
@@ -27,13 +26,13 @@ void Sodium::init(const std::wstring& password, const std::vector<unsigned char>
 	key.resize(KEY_LENGTH, 0);
 	header.resize(HEADER_LENGTH, 0);
 
-	int result = crypto_pwhash(key.data(), key.size(), reinterpret_cast<const char*>(password.c_str()), password.size() * sizeof(wchar_t), salt.data(), PW_OPSLIMIT, PW_MEMLIMIT, PW_ALG);
+	int result = crypto_pwhash(key.data(), key.size(),password.c_str(), password.size() * sizeof(char), salt.data(), PW_OPSLIMIT, PW_MEMLIMIT, PW_ALG);
 	if (result != 0) {
 		throw std::runtime_error("Cant derive key from password");
 	}
 }
 
-Sodium::Sodium(const std::wstring& password) {
+Sodium::Sodium(const std::string& password) {
 	if (sodium_init() < 0) {
 		throw std::runtime_error("Cant init libsodium");
 	}
@@ -47,17 +46,17 @@ Sodium::Sodium(const std::wstring& password) {
 	crypto_secretstream_xchacha20poly1305_init_push(&state, header.data(), key.data());
 }
 
-Sodium::Sodium(const std::wstring& password, const std::vector<unsigned char>& salt, const std::vector<unsigned char>& header) {
+Sodium::Sodium(const std::string& password, const std::vector<unsigned char>& salt, const std::vector<unsigned char>& header) {
 	forEncryption = false;
 	init(password, salt);
 	if (header.size() != HEADER_LENGTH) {
 		Util::BuffType msg;
-		msg << L"Invalid header size: " << header.size() << L" expected " << HEADER_LENGTH;
+		msg << "Invalid header size: " << header.size() << " expected " << HEADER_LENGTH;
 		throw Util::generateErrorMessage<std::runtime_error>(msg);
 	}
 	if (crypto_secretstream_xchacha20poly1305_init_pull(&state, header.data(), key.data()) != 0) {
 		Util::BuffType msg;
-		msg << L"Cant init pull, invalid header or key?";
+		msg << "Cant init pull, invalid header or key?";
 		throw Util::generateErrorMessage<std::runtime_error>(msg);
 	}
 }
@@ -65,7 +64,7 @@ Sodium::Sodium(const std::wstring& password, const std::vector<unsigned char>& s
 Sodium::~Sodium() noexcept(false) {
 	if (inProgress) {
 		Util::BuffType msg;
-		msg << L"File encryption or decryption never flagged finished";
+		msg << "File encryption or decryption never flagged finished";
 		throw Util::generateErrorMessage<std::runtime_error>(msg);
 	}
 }
@@ -73,7 +72,7 @@ Sodium::~Sodium() noexcept(false) {
 std::vector<unsigned char> Sodium::encrypt(const std::vector<unsigned char>& src, bool isLast) {
 	if (!forEncryption) {
 		Util::BuffType msg;
-		msg << L"Called encrypt but instance is for decryption";
+		msg << "Called encrypt but instance is for decryption";
 		throw Util::generateErrorMessage<std::logic_error>(msg);
 	}
 	inProgress = !isLast;
@@ -88,13 +87,13 @@ std::vector<unsigned char> Sodium::encrypt(const std::vector<unsigned char>& src
 std::vector<unsigned char> Sodium::decrypt(const std::vector<unsigned char>& src, bool isLast) {
 	if (forEncryption) {
 		Util::BuffType msg;
-		msg << L"Called decrypt but instance is for encryption";
+		msg << "Called decrypt but instance is for encryption";
 		throw Util::generateErrorMessage<std::logic_error>(msg);
 	}
 	if (src.size() < (ENCRYPTED_CHUNK_ADDITIONAL_SIZE + 1)) {
 		Util::BuffType msg;
-		msg << L"Cant decrypt chunk which is less than " << (ENCRYPTED_CHUNK_ADDITIONAL_SIZE + 1) << L" bytes long but chunk is "
-			<< src.size() << L" bytes long";
+		msg << "Cant decrypt chunk which is less than " << (ENCRYPTED_CHUNK_ADDITIONAL_SIZE + 1) << " bytes long but chunk is "
+			<< src.size() << " bytes long";
 		throw Util::generateErrorMessage<std::underflow_error>(msg);
 	}
 	inProgress = true;
@@ -104,13 +103,13 @@ std::vector<unsigned char> Sodium::decrypt(const std::vector<unsigned char>& src
 
 	if (crypto_secretstream_xchacha20poly1305_pull(&state, ret.data(), &retLen, &tag, src.data(), src.size(), NULL, 0) != 0) {
 		Util::BuffType msg;
-		msg << L"Cant decrypt data, invalid chunk?";
+		msg << "Cant decrypt data, invalid chunk?";
 		throw Util::generateErrorMessage<std::runtime_error>(msg);
 	}
 	if (tag == crypto_secretstream_xchacha20poly1305_TAG_FINAL) {
 		if (!isLast) {
 			Util::BuffType msg;
-			msg << L"Data finished but not last chunk";
+			msg << "Data finished but not last chunk";
 			throw Util::generateErrorMessage<std::runtime_error>(msg);
 		}
 		inProgress = false;

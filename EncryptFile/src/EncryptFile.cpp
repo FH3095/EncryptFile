@@ -1,7 +1,6 @@
 ﻿
 #include "EncryptFile.h"
 #include "CmdParser.h"
-#include "Convert.h"
 #include <stdexcept>
 #include <cstdlib>
 #include <memory>
@@ -14,42 +13,42 @@ using namespace std;
 
 void printHelp();
 
-const std::wstring ENCRYPTED_FILENAME_ENDING(L".enc");
+const std::string ENCRYPTED_FILENAME_ENDING(".enc");
 
 int main(int argc, char* argv[])
 {
 	try {
 		CmdParser parser(argc, argv);
-		//wchar_t* args[] = { L"aaa", L"-encrypt", L"-file=ToEnc.txt" };
+		//char* args[] = { "aaa", "-encrypt", "-file=ToEnc.txt" };
 		//CmdParser parser(3, args);
-		if (parser.hasParameter(L"help")) {
+		if (parser.hasParameter("help")) {
 			printHelp();
 			return 0;
 		}
 
 		bool encrypt;
-		if (parser.hasParameter(L"encrypt")) {
+		if (parser.hasParameter("encrypt")) {
 			encrypt = true;
 		}
-		else if (parser.hasParameter(L"decrypt")) {
+		else if (parser.hasParameter("decrypt")) {
 			encrypt = false;
 		}
 		else {
-			wcerr << L"Missing -encrypt or -decrypt parameter." << endl;
+			cerr << "Missing -encrypt or -decrypt parameter." << endl;
 			return 0;
 		}
 
-		std::shared_ptr<const std::wstring> srcFilename = parser.getParameter(L"file");
-		std::wstring dstFilename;
+		std::shared_ptr<const std::string> srcFilename = parser.getParameter("file");
+		std::string dstFilename;
 		if (!srcFilename || srcFilename->empty()) {
-			wcerr << L"Missing -file parameter or value of -file." << endl;
+			cerr << "Missing -file parameter or value of -file." << endl;
 			return 0;
 		}
 		// Check filename ends with .enc
 		if (!encrypt) {
 			size_t pos = srcFilename->rfind(ENCRYPTED_FILENAME_ENDING);
 			if ((pos + ENCRYPTED_FILENAME_ENDING.size()) != srcFilename->size()) {
-				wcerr << L"File to decrypt doesnt end with \"" << ENCRYPTED_FILENAME_ENDING << L"\"." << endl;
+				cerr << "File to decrypt doesnt end with \"" << ENCRYPTED_FILENAME_ENDING << "\"." << endl;
 				return 0;
 			}
 			dstFilename = srcFilename->substr(0, srcFilename->size() - ENCRYPTED_FILENAME_ENDING.size());
@@ -59,17 +58,17 @@ int main(int argc, char* argv[])
 			dstFilename.append(ENCRYPTED_FILENAME_ENDING);
 		}
 
-		std::shared_ptr<const std::wstring> password = parser.getParameter(L"password");
+		std::shared_ptr<const std::string> password = parser.getParameter("password");
 		if (!password || password->empty()) {
-			std::wstringbuf buff;
-			wcout << L"Enter Password: ";
-			wcin.get(buff);
-			wcout << endl;
+			std::stringbuf buff;
+			cout << "Enter Password: ";
+			cin.get(buff);
+			cout << endl;
 			if (buff.str().length() < 1) {
-				wcerr << L"Empty password is not allowed." << endl;
+				cerr << "Empty password is not allowed." << endl;
 				return 0;
 			}
-			password.reset(new std::wstring(buff.str()));
+			password.reset(new std::string(buff.str()));
 		}
 
 		FileCrypter crypter;
@@ -80,19 +79,19 @@ int main(int argc, char* argv[])
 			crypter.doDecrypt(*password, *srcFilename, dstFilename);
 		}
 
-		wcout << L"Finished." << endl;
+		cout << "Finished." << endl;
 		return 0;
 	}
 	catch (const std::exception& e) {
-		wcerr << Convert::charToWChar(e.what()).c_str() << endl;
+		cerr << e.what() << endl;
 		std::_Exit(EXIT_FAILURE);
 	}
 }
 
 void printHelp() {
-	wcout << L"HELP: " << endl
-		<< L"\t-help: Print this help and exit" << endl
-		<< L"\t[-encrypt|-decrypt]: Encrypt or decrypt file" << endl
-		<< L"\t-file=Filename: File to decrypt or encrypt" << endl
-		<< L"\t-password=Password: Password to use (you should pipe the password, otherwise password is visible on command line)" << endl;
+	cout << "HELP: " << endl
+		<< "\t-help: Print this help and exit" << endl
+		<< "\t[-encrypt|-decrypt]: Encrypt or decrypt file" << endl
+		<< "\t-file=Filename: File to decrypt or encrypt" << endl
+		<< "\t-password=Password: Password to use (you should pipe the password, otherwise password is visible on command line)" << endl;
 }

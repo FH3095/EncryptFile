@@ -2,20 +2,21 @@
 #include "FileCrypter.h"
 #include "SodiumClass.h"
 #include "Util.h"
+#include "Convert.h"
 #include <fstream>
 #include <algorithm>
 
 const int64_t FileCrypter::CHUNK_SIZE = 1 * 1024 * 1024;
 
 void FileCrypter::openFiles(const std::wstring& source, std::ifstream& input, const std::wstring& dest, std::ofstream& output) {
-	input.open(source, std::ifstream::in | std::ifstream::binary);
+	input.open(Convert::wcharToChar(source.c_str()), std::ifstream::in | std::ifstream::binary);
 	if (!input.is_open()) {
 		Util::BuffType msg;
 		msg << L"Cant open input-file " << source;
 		throw Util::generateErrorMessage<std::runtime_error>(msg);
 	}
 
-	output.open(dest, std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
+	output.open(Convert::wcharToChar(dest.c_str()), std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
 	if (!output.is_open()) {
 		Util::BuffType msg;
 		msg << L"Cant open output-file " << dest;

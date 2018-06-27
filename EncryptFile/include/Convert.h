@@ -2,14 +2,15 @@
 
 #include <string>
 #include <vector>
+#include <locale>
 
 class Convert {
 private:
 	Convert() {
 	};
 
-	template <typename From, typename To, typename CTypeChar>
-	static std::basic_string<To> convertChars(const From* const str, const To fillCharacter, To(*func)(const std::ctype<CTypeChar>&, From)) {
+	template <typename From, typename To>
+	static std::basic_string<To> convertChars(const From* const str, const To fillCharacter, To(*func)(const std::locale&, From)) {
 		std::locale loc;
 		std::basic_string<From> src = std::basic_string<From>(str);
 		size_t srcLen = src.length();
@@ -17,19 +18,18 @@ private:
 
 		dst.resize(srcLen + 1, fillCharacter);
 
-		const std::ctype<CTypeChar>& facet = std::use_facet<std::ctype<CTypeChar>>(loc);
 		for (size_t i = 0; i < srcLen; ++i) {
-			dst[i] = (*func)(facet, src.at(i));
+			dst[i] = (*func)(loc, src.at(i));
 		}
 		return std::basic_string<To>(dst.data());
 	}
 
-	static char wcharNarrow(const std::ctype<wchar_t>& ctype, wchar_t c) {
-		return ctype.narrow(c);
+	static char wcharNarrow(const std::locale& loc, wchar_t c) {
+		return std::use_facet<std::ctype<wchar_t>>(loc).narrow(c, '?');
 	}
 
-	static wchar_t wcharWiden(const std::ctype<wchar_t>& ctype, char c) {
-		return ctype.widen(c);
+	static wchar_t wcharWiden(const std::locale& loc, char c) {
+		return std::use_facet<std::ctype<wchar_t>>(loc).widen(c);
 	}
 
 public:

@@ -1,7 +1,7 @@
 ﻿# CMakeList.txt: CMake-Projekt für "EncryptFile". Schließen Sie die Quelle ein, und definieren Sie
 # projektspezifische Logik hier.
 #
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required (VERSION 3.7)
 
 set(INCLUDE_DIRS "include/")
 file(GLOB SOURCE_FILES

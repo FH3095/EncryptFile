@@ -1,7 +1,7 @@
 ﻿# CMakeList.txt: CMake-Projektdatei der obersten Ebene. Führen Sie eine globale Konfiguration durch,
 # und schließen Sie hier Unterprojekte ein.
 #
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required (VERSION 3.7)
 
 project ("EncryptFile" VERSION 1.0)
 
